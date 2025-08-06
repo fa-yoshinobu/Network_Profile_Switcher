@@ -174,6 +174,40 @@ NetworkProfileSwitcher/bin/Release/net6.0-windows/NetworkProfileSwitcher.exe
   - **アダプタの再接続**: 物理的にアダプタを再接続
   - **管理者権限の確認**: 管理者権限で実行されているか確認
 
+#### ウイルス判定エラー
+- **症状**: ウイルス対策ソフトがアプリケーションをウイルスとして検出する
+- **原因**:
+  - 管理者権限を要求するアプリケーション
+  - ネットワーク設定を変更する機能
+  - 未署名の実行ファイル
+- **解決方法**:
+  - **ウイルス対策ソフトの除外設定**: アプリケーションのフォルダを除外リストに追加
+  - **Windows Defenderの除外設定**: Windows Defenderの設定で除外フォルダを追加
+  - **信頼できるアプリケーションとして追加**: ウイルス対策ソフトの設定で信頼リストに追加
+  - **ソースコードからのビルド**: ソースコードをダウンロードして自分でビルド
+  - **管理者権限での実行**: 管理者権限で実行することで信頼性を向上
+
+#### ウイルス判定の回避方法
+- **方法1: 自己完結型ビルド**
+  ```bash
+  # 自己完結型ビルド（推奨）
+  dotnet publish --configuration Release --self-contained false --runtime win-x64 --output bin/Release/SingleFile
+  ```
+- **方法2: ソースコードからのビルド**
+  ```bash
+  # ソースコードをダウンロード
+  git clone https://github.com/your-username/Network_Profile_Switcher.git
+  cd Network_Profile_Switcher/NetworkProfileSwitcher
+  # ビルド
+  dotnet build --configuration Release
+  ```
+- **方法3: ウイルス対策ソフトの設定変更**
+  - Windows Defender: 除外フォルダに追加
+  - その他のウイルス対策ソフト: 信頼リストに追加
+- **方法4: 管理者権限での実行**
+  - アプリケーションを右クリック→「管理者として実行」
+  - 管理者権限で実行することで信頼性を向上
+
 **予防策**:
 - アプリケーションはnetshコマンドを試行し、失敗した場合はWMIを使用
 - より詳細なエラー情報が表示されるようになりました
