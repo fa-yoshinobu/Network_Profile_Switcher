@@ -78,6 +78,9 @@ dotnet build NetworkProfileSwitcher/NetworkProfileSwitcher.csproj --configuratio
 ```bash
 # ビルドされたファイルを実行
 NetworkProfileSwitcher/bin/Release/net6.0-windows/NetworkProfileSwitcher.exe
+
+# 管理者権限で実行（推奨）
+# アプリケーションを右クリックして「管理者として実行」を選択
 ```
 
 ## 使用方法
@@ -105,6 +108,7 @@ NetworkProfileSwitcher/bin/Release/net6.0-windows/NetworkProfileSwitcher.exe
 - **既にDHCPが有効な場合**: 「DHCP is already enabled」メッセージが表示されますが、これは正常な動作です
 - **System.Managementエラー**: .NET 6.0 Runtimeが正しくインストールされているか確認してください
 - **アダプタ固有の問題**: 一部のアダプタでは手動設定が必要な場合があります
+- **WMIフォールバック**: netshが失敗した場合、自動的にWMIを使用してDHCP設定を適用します
 
 #### 3. 設定の適用
 1. ネットワークアダプタ一覧から設定を変更したいアダプタを選択
@@ -159,6 +163,25 @@ Network_Profile_Switcher/
 
 これにより、リポジトリのサイズを最小限に保ち、不要なファイルがアップロードされることを防ぎます。
 
+### 実行ファイル構成
+
+リリースビルド後の実行ファイル構成：
+
+```
+NetworkProfileSwitcher/bin/Release/net6.0-windows/
+├── NetworkProfileSwitcher.exe          # メイン実行ファイル (148KB)
+├── NetworkProfileSwitcher.dll          # メインアセンブリ (38KB)
+├── NetworkProfileSwitcher.runtimeconfig.json # ランタイム設定
+├── NetworkProfileSwitcher.deps.json   # 依存関係情報
+├── System.Text.Json.dll               # JSON処理ライブラリ (567KB)
+├── System.Management.dll              # WMI処理ライブラリ (72KB)
+├── System.Text.Encodings.Web.dll      # エンコーディングライブラリ (70KB)
+└── runtimes/win/lib/net6.0/          # Windows用ネイティブライブラリ
+    └── System.Management.dll          # WMI用ライブラリ (305KB)
+```
+
+**合計サイズ**: 約1.3MB（最小構成）
+
 ## 設定ファイル
 
 ### presets.json
@@ -201,6 +224,7 @@ Network_Profile_Switcher/
 - **Nullable Reference Types**: 有効
 - **Implicit Usings**: 有効
 - **デバッグ情報**: 無効（リリースビルド）
+- **自己完結型**: 無効（.NET 6.0 Runtimeが必要）
 
 ### 依存関係
 ```xml
@@ -218,6 +242,9 @@ dotnet build NetworkProfileSwitcher/NetworkProfileSwitcher.csproj --configuratio
 
 # クリーンアップ
 dotnet clean NetworkProfileSwitcher/NetworkProfileSwitcher.csproj
+
+# 実行ファイルの生成（リリース版）
+dotnet publish NetworkProfileSwitcher/NetworkProfileSwitcher.csproj --configuration Release --self-contained false
 ```
 
 ## トラブルシューティング
@@ -342,6 +369,7 @@ Could not load file or assembly 'System.Management, Version=8.0.0.0'
 - **イベント駆動**: UI操作による非同期処理
 - **Null安全性**: C# 8.0のNullable Reference Typesを活用
 - **ログ機能**: 詳細なデバッグ情報の記録
+- **エラーハンドリング**: DHCP設定の改善とWMIフォールバック機能
 
 ### セキュリティ
 - **管理者権限**: ネットワーク設定変更のため必要
@@ -355,6 +383,12 @@ Could not load file or assembly 'System.Management, Version=8.0.0.0'
 - **ネットワーク管理**: 244行
 - **プログラムエントリ**: 172行
 - **プリセットモデル**: 25行
+
+### 実行ファイル情報
+- **メイン実行ファイル**: `NetworkProfileSwitcher.exe` (148KB)
+- **メインアセンブリ**: `NetworkProfileSwitcher.dll` (38KB)
+- **依存ライブラリ**: 約1.3MB（合計）
+- **最小実行環境**: .NET 6.0 Runtimeが必要
 
 ## ライセンス
 
@@ -384,3 +418,13 @@ Could not load file or assembly 'System.Management, Version=8.0.0.0'
 - 使用体験の共有
 
 すべてのフィードバックを歓迎いたします！
+
+## 更新履歴
+
+### v1.0.0 (最新)
+- **DHCP設定の改善**: 「DHCP is already enabled」エラーの適切な処理
+- **WMIフォールバック機能**: netsh失敗時の自動WMI使用
+- **エラーハンドリング強化**: System.Managementアセンブリエラーの詳細対応
+- **実行ファイル最適化**: 不要なファイルの削除と最小構成の実現
+- **.gitignore設定**: 不要ファイルの除外設定を追加
+- **README更新**: 詳細な使用方法とトラブルシューティングを追加
