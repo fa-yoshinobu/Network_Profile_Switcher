@@ -319,7 +319,8 @@ namespace NetworkProfileSwitcher.Forms
                             $"ゲートウェイ: {preset.Gateway}\n" +
                             $"DNS1: {preset.DNS1}\n" +
                             $"DNS2: {preset.DNS2}\n\n" +
-                            $"エラー詳細:\n{ex.Message}";
+                            $"エラー詳細:\n{ex.Message}\n\n" +
+                            $"アダプタ詳細情報:\n{NetworkManager.GetAdapterDetailedInfo(adapter)}";
 
                 using (var errorForm = new ErrorDialogForm(
                     "エラー", 

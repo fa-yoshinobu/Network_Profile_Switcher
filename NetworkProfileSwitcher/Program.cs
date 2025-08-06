@@ -5,14 +5,14 @@ using System.Diagnostics;
 using NetworkProfileSwitcher.Forms;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace NetworkProfileSwitcher
 {
     internal static class Program
     {
         private static readonly string LogFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "NetworkProfileSwitcher",
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? Environment.CurrentDirectory,
             "debug.log");
 
         [STAThread]
@@ -20,6 +20,9 @@ namespace NetworkProfileSwitcher
         {
             try
             {
+                // エンコーディングプロバイダーの登録（Shift_JISサポート用）
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                
                 // ログディレクトリの作成
                 var logDirectory = Path.GetDirectoryName(LogFilePath);
                 if (!string.IsNullOrEmpty(logDirectory))
@@ -161,7 +164,8 @@ namespace NetworkProfileSwitcher
             try
             {
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                File.AppendAllText(LogFilePath, $"[{timestamp}] {message}{Environment.NewLine}");
+                var logEntry = $"[{timestamp}] {message}{Environment.NewLine}";
+                File.AppendAllText(LogFilePath, logEntry, Encoding.UTF8);
             }
             catch
             {
