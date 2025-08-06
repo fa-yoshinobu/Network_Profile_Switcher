@@ -38,6 +38,12 @@ namespace NetworkProfileSwitcher.Models
                     }
                     catch (Exception wmiException)
                     {
+                        // DHCPが既に有効な場合は成功として扱う
+                        if (netshException.Message.Contains("DHCP is already enabled"))
+                        {
+                            return; // 成功として扱う
+                        }
+                        
                         throw new Exception($"DHCP設定の適用に失敗しました。\nアダプタ: {adapter.Name}\nアダプタ状態: {adapter.OperationalStatus}\nアダプタ種類: {adapter.NetworkInterfaceType}\n\nnetshエラー:\n{netshException.Message}\n\nWMIエラー:\n{wmiException.Message}");
                     }
                 }
@@ -109,6 +115,13 @@ namespace NetworkProfileSwitcher.Models
         {
             try
             {
+                // System.Managementアセンブリの存在確認
+                var managementAssembly = typeof(System.Management.ManagementScope).Assembly;
+                if (managementAssembly == null)
+                {
+                    throw new Exception("System.Managementアセンブリが見つかりません。.NET 6.0 Runtimeが正しくインストールされているか確認してください。");
+                }
+
                 // WMIを使用してDHCP設定を適用
                 var scope = new ManagementScope("root\\cimv2");
                 scope.Connect();
@@ -139,6 +152,18 @@ namespace NetworkProfileSwitcher.Models
                         }
                     }
                 }
+            }
+            catch (System.Management.ManagementException ex)
+            {
+                throw new Exception($"WMIを使用したDHCP設定の適用に失敗しました: {ex.Message}");
+            }
+            catch (System.Reflection.ReflectionTypeLoadException ex)
+            {
+                throw new Exception($"System.Managementアセンブリの読み込みに失敗しました。.NET 6.0 Runtimeが正しくインストールされているか確認してください。\n\nエラー詳細: {ex.Message}");
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                throw new Exception($"System.Managementアセンブリが見つかりません。.NET 6.0 Runtimeを再インストールしてください。\n\nエラー詳細: {ex.Message}");
             }
             catch (Exception ex)
             {
@@ -179,10 +204,17 @@ namespace NetworkProfileSwitcher.Models
 
                     process.WaitForExit();
 
+                    var error = process.StandardError.ReadToEnd();
+                    var output = process.StandardOutput.ReadToEnd();
+
+                    // DHCPが既に有効な場合は成功として扱う
                     if (process.ExitCode != 0)
                     {
-                        var error = process.StandardError.ReadToEnd();
-                        var output = process.StandardOutput.ReadToEnd();
+                        if (output.Contains("DHCP is already enabled") || error.Contains("DHCP is already enabled"))
+                        {
+                            return 0; // 成功として扱う
+                        }
+                        
                         throw new Exception($"コマンドの実行に失敗しました: {command}\n終了コード: {process.ExitCode}\n\n標準エラー出力:\n{error}\n\n標準出力:\n{output}");
                     }
 
@@ -219,8 +251,8 @@ namespace NetworkProfileSwitcher.Models
 
                     process.WaitForExit();
 
-                    var error = process.StandardError.ReadToEnd();
-                    var output = process.StandardOutput.ReadToEnd();
+                    var error = process.StandardOutput.ReadToEnd();
+                    var output = process.StandardError.ReadToEnd();
 
                     var result = $"終了コード: {process.ExitCode}\n";
                     if (!string.IsNullOrEmpty(error))

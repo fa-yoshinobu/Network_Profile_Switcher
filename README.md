@@ -8,7 +8,7 @@ Network Profile Switcherは、Windows環境でネットワーク設定を簡単�
 
 ### 🔧 ネットワーク設定管理
 - **静的IP設定**: 固定IPアドレス、サブネットマスク、ゲートウェイ、DNSサーバーの設定
-- **DHCP設定**: 自動IP取得設定への切り替え
+- **DHCP設定**: 自動IP取得設定への切り替え（netsh + WMIフォールバック）
 - **プリセット保存**: 複数のネットワーク設定を名前付きで保存
 - **プリセット編集**: 保存された設定の編集・削除・複製
 
@@ -17,10 +17,13 @@ Network Profile Switcherは、Windows環境でネットワーク設定を簡単�
 - **プリセット一覧**: 保存された設定の一覧表示
 - **現在の設定表示**: 選択されたアダプタの現在のIP設定を表示
 - **視覚的フィードバック**: アダプタの状態（有効/無効）を色分け表示
+- **アダプタ詳細情報**: アダプタの種類、速度、MACアドレスを表示
 
-### 🔒 セキュリティ
+### 🔒 セキュリティ・ログ機能
 - **管理者権限**: ネットワーク設定変更のため管理者権限で実行
 - **自動権限昇格**: 管理者権限なしで起動時に自動的に権限昇格を提案
+- **詳細ログ機能**: デバッグ情報を`%LOCALAPPDATA%\NetworkProfileSwitcher\debug.log`に記録
+- **エラーハンドリング**: 包括的な例外処理とユーザーフレンドリーなエラーメッセージ
 
 ## システム要件
 
@@ -86,7 +89,7 @@ NetworkProfileSwitcher/bin/Release/net6.0-windows/NetworkProfileSwitcher.exe
 2. 「プリセット追加」ボタンをクリック
 3. 以下の情報を入力：
    - **名前**: プリセットの識別名（例：「自宅」「会社」「DHCP」）
-   - **IPアドレス**: 固定IPアドレス（例：192.168.1.100）
+   - **IPアドレス**: 固定IPアドレス（例：192.168.1.100）または「DHCP」
    - **サブネットマスク**: サブネットマスク（例：255.255.255.0）
    - **ゲートウェイ**: デフォルトゲートウェイ（例：192.168.1.1）
    - **DNS1**: プライマリDNSサーバー（例：8.8.8.8）
@@ -97,6 +100,11 @@ NetworkProfileSwitcher/bin/Release/net6.0-windows/NetworkProfileSwitcher.exe
 1. プリセット追加画面で「IPアドレス」に「DHCP」と入力
 2. その他の項目は空欄のまま
 3. 名前を「DHCP」など分かりやすい名前に設定
+
+**注意**: DHCP設定を適用する際、以下の点にご注意ください：
+- **既にDHCPが有効な場合**: 「DHCP is already enabled」メッセージが表示されますが、これは正常な動作です
+- **System.Managementエラー**: .NET 6.0 Runtimeが正しくインストールされているか確認してください
+- **アダプタ固有の問題**: 一部のアダプタでは手動設定が必要な場合があります
 
 #### 3. 設定の適用
 1. ネットワークアダプタ一覧から設定を変更したいアダプタを選択
@@ -115,6 +123,7 @@ NetworkProfileSwitcher/bin/Release/net6.0-windows/NetworkProfileSwitcher.exe
 - **現在の設定**: 選択されたアダプタの現在のIP設定を表示
 - **アダプタ情報**: アダプタの種類、速度、MACアドレスを表示
 - **更新**: 「更新」ボタンでネットワーク情報を再取得
+- **ネットワーク接続**: 「ネットワーク接続を開く」ボタンでWindowsのネットワーク設定を開く
 
 ## ファイル構成
 
@@ -122,18 +131,33 @@ NetworkProfileSwitcher/bin/Release/net6.0-windows/NetworkProfileSwitcher.exe
 Network_Profile_Switcher/
 ├── NetworkProfileSwitcher/
 │   ├── Forms/                    # Windows Forms UI
-│   │   ├── MainForm.cs          # メインフォーム
+│   │   ├── MainForm.cs          # メインフォーム（873行）
 │   │   ├── PresetEditorForm.cs  # プリセット編集フォーム
+│   │   ├── PresetEditorForm.Designer.cs # プリセット編集フォームデザイナー
 │   │   └── ErrorDialogForm.cs   # エラーダイアログ
 │   ├── Models/                   # データモデル
-│   │   ├── NetworkPreset.cs     # プリセットデータクラス
-│   │   └── NetworkManager.cs    # ネットワーク設定管理
-│   ├── Program.cs               # アプリケーションエントリーポイント
+│   │   ├── NetworkPreset.cs     # プリセットデータクラス（25行）
+│   │   └── NetworkManager.cs    # ネットワーク設定管理（244行）
+│   ├── Program.cs               # アプリケーションエントリーポイント（172行）
 │   ├── app.manifest            # 管理者権限要求設定
-│   └── NetworkProfileSwitcher.csproj
+│   └── NetworkProfileSwitcher.csproj # プロジェクトファイル
 ├── NetworkProfileSwitcher.sln   # Visual Studio ソリューションファイル
+├── .gitignore                   # Git除外設定ファイル
 └── README.md                    # このファイル
 ```
+
+### Git除外設定
+
+プロジェクトには`.gitignore`ファイルが含まれており、以下のファイルがGitリポジトリから除外されます：
+
+- **ビルド成果物**: `bin/`, `obj/`ディレクトリ
+- **Visual Studio一時ファイル**: `.vs/`, `*.suo`, `*.user`等
+- **ログファイル**: `*.log`, `debug.log`
+- **実行ファイル**: `*.exe`, `*.dll`, `*.pdb`
+- **NuGetパッケージ**: `*.nupkg`, `packages/`
+- **アプリケーションログ**: `%LOCALAPPDATA%/NetworkProfileSwitcher/`
+
+これにより、リポジトリのサイズを最小限に保ち、不要なファイルがアップロードされることを防ぎます。
 
 ## 設定ファイル
 
@@ -171,11 +195,18 @@ Network_Profile_Switcher/
 
 ## ビルド情報
 
-### リリースビルド
-- **実行ファイル**: `NetworkProfileSwitcher.exe` (151KB)
-- **依存関係**: 約862KB（合計）
-- **最適化**: デバッグ情報を除いた最適化されたコード
-- **配布準備**: 自己完結型、ポータブル
+### プロジェクト設定
+- **ターゲットフレームワーク**: .NET 6.0-windows
+- **アプリケーションタイプ**: Windows Forms
+- **Nullable Reference Types**: 有効
+- **Implicit Usings**: 有効
+- **デバッグ情報**: 無効（リリースビルド）
+
+### 依存関係
+```xml
+<PackageReference Include="System.Text.Json" Version="8.0.5" />
+<PackageReference Include="System.Management" Version="8.0.0" />
+```
 
 ### ビルドコマンド
 ```bash
@@ -239,16 +270,59 @@ dotnet clean NetworkProfileSwitcher/NetworkProfileSwitcher.csproj
 - アンチウイルスソフトがアプリケーションをブロックしていないか確認
 - Windows Defenderの設定を確認
 
-#### 7. USB EthernetアダプタでDHCP設定が失敗する
-**症状**: ASIX USB to Gigabit EthernetなどのUSBアダプタでDHCP設定が失敗する
+#### 6.1. System.Managementアセンブリエラー
+**症状**: 「Could not load file or assembly 'System.Management'」エラーが表示される
 **解決方法**:
-- **アダプタの状態確認**: アダプタが有効になっているか確認
-- **ドライバーの更新**: 最新のドライバーに更新
-- **代替方法**: アプリケーションが自動的にWMIを使用してDHCP設定を適用
-- **手動設定**: コントロールパネルから手動でDHCP設定を確認
-- **アダプタの再接続**: USBアダプタを抜き差しして再接続
+- **.NET 6.0 Runtimeの再インストール**: [.NET 6.0 Runtime](https://dotnet.microsoft.com/download/dotnet/6.0)をダウンロード・インストール
+- **システムの再起動**: インストール後にシステムを再起動
+- **アプリケーションの再インストール**: アプリケーションを再ダウンロード・インストール
+- **Visual C++ 再頒布可能パッケージ**: [Microsoft Visual C++ 再頒布可能パッケージ](https://aka.ms/vs/17/release/vc_redist.x64.exe)をインストール
 
-**詳細なエラー情報**:
+#### 7. DHCP設定が失敗する（Realtek PCIe GbE等）
+**症状**: 「DHCP設定の適用に失敗しました」エラーが表示される
+**エラーメッセージ例**:
+```
+DHCP設定の適用に失敗しました。
+アダプタ: Realtek PCIe GbE Family Controller
+アダプタ状態: Up
+アダプタ種類: Ethernet
+
+netshエラー:
+コマンドの実行に失敗しました: interface ip set address "Realtek PCIe GbE Family Controller" dhcp
+終了コード: 1
+
+標準エラー出力:
+標準出力:
+DHCP is already enabled on this interface.
+
+WMIエラー:
+Could not load file or assembly 'System.Management, Version=8.0.0.0'
+```
+
+**原因と解決方法**:
+
+**原因1: DHCPが既に有効**
+- **症状**: 「DHCP is already enabled on this interface」メッセージが表示される
+- **解決方法**: 
+  - これは実際にはエラーではありません。DHCPが既に有効になっているため、設定変更は不要です
+  - アプリケーションを再起動して、現在の設定を確認してください
+
+**原因2: System.Managementアセンブリの不足**
+- **症状**: 「Could not load file or assembly 'System.Management'」エラー
+- **解決方法**:
+  - .NET 6.0 Runtimeが正しくインストールされているか確認
+  - システムを再起動
+  - アプリケーションを再インストール
+
+**原因3: アダプタ固有の問題**
+- **症状**: 特定のアダプタでDHCP設定が失敗する
+- **解決方法**:
+  - **ドライバーの更新**: 最新のドライバーに更新
+  - **手動設定**: コントロールパネルから手動でDHCP設定を確認
+  - **アダプタの再接続**: 物理的にアダプタを再接続
+  - **管理者権限の確認**: 管理者権限で実行されているか確認
+
+**予防策**:
 - アプリケーションはnetshコマンドを試行し、失敗した場合はWMIを使用
 - より詳細なエラー情報が表示されるようになりました
 - アダプタの状態、種類、エラー詳細が含まれます
@@ -259,7 +333,7 @@ dotnet clean NetworkProfileSwitcher/NetworkProfileSwitcher.csproj
 - **言語**: C# (.NET 6.0)
 - **UI**: Windows Forms
 - **設定保存**: JSON (System.Text.Json 8.0.5)
-- **ネットワーク操作**: netshコマンド
+- **ネットワーク操作**: netshコマンド + WMI (System.Management 8.0.0)
 - **ビルド**: MSBuild
 
 ### アーキテクチャ
@@ -267,12 +341,20 @@ dotnet clean NetworkProfileSwitcher/NetworkProfileSwitcher.csproj
 - **静的クラス**: NetworkManagerでネットワーク操作を集約
 - **イベント駆動**: UI操作による非同期処理
 - **Null安全性**: C# 8.0のNullable Reference Typesを活用
+- **ログ機能**: 詳細なデバッグ情報の記録
 
 ### セキュリティ
 - **管理者権限**: ネットワーク設定変更のため必要
 - **UAC対応**: ユーザーアカウント制御との連携
 - **エラーハンドリング**: 包括的な例外処理
 - **ログ機能**: デバッグ情報の記録
+
+### コード統計
+- **総行数**: 約1,500行
+- **メインフォーム**: 873行
+- **ネットワーク管理**: 244行
+- **プログラムエントリ**: 172行
+- **プリセットモデル**: 25行
 
 ## ライセンス
 
