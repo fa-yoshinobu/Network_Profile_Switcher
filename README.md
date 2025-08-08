@@ -47,7 +47,7 @@ Network Profile Switcherは、Windows環境でネットワーク設定を簡単�
 ### 方法1: リリース版のダウンロード（推奨）
 
 #### 1. 最新リリースのダウンロード
-1. [Releases](https://github.com/your-username/Network_Profile_Switcher/releases)ページから最新版をダウンロード
+1. [Releases](https://github.com/fa-yoshinobu/Network_Profile_Switcher/releases)ページから最新版をダウンロード
 2. `NetworkProfileSwitcher-Release.zip`を任意のフォルダに展開
 
 #### 2. 初回実行
