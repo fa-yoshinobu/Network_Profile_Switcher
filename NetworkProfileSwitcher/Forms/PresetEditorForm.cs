@@ -2,7 +2,6 @@ using System;
 using System.Windows.Forms;
 using NetworkProfileSwitcher.Models;
 using System.Drawing;
-using System.Net.NetworkInformation;
 
 namespace NetworkProfileSwitcher.Forms
 {

@@ -14,7 +14,7 @@ namespace NetworkProfileSwitcher.Forms
     public partial class MainForm : Form
     {
         private List<NetworkPreset> presets = new List<NetworkPreset>();
-        private const string PresetsFilePath = "presets.json";
+        private const string PresetsFilePath = "NetworkProfileSwitcher.json";
         private ListBox? adapterListBox;
         private ListBox? presetListBox;
         private Button? applyButton;
@@ -262,6 +262,10 @@ namespace NetworkProfileSwitcher.Forms
             
             mainMenuStrip.Items.Add(helpMenuItem);
 
+            // キーボードショートカットの設定
+            this.KeyPreview = true;
+            this.KeyDown += MainForm_KeyDown;
+
             // フォーム設定
             this.ClientSize = new Size(900, 650);
             this.Text = "Network Profile Switcher";
@@ -429,6 +433,19 @@ namespace NetworkProfileSwitcher.Forms
                     
                     if (ValidatePreset(preset))
                     {
+                        // 重複チェック
+                        if (presets.Any(p => p.Name.Equals(preset.Name, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            using (var errorForm = new ErrorDialogForm(
+                                "エラー", 
+                                "同じ名前のプリセットが既に存在します。",
+                                $"プリセット名「{preset.Name}」は既に使用されています。\n別の名前を入力してください。"))
+                            {
+                                errorForm.ShowDialog();
+                            }
+                            return;
+                        }
+
                         presets.Add(preset);
                         SavePresets();
                         UpdatePresetList();
@@ -451,6 +468,19 @@ namespace NetworkProfileSwitcher.Forms
                     
                     if (ValidatePreset(preset))
                     {
+                        // 重複チェック（自分以外のプリセットとの重複）
+                        if (presets.Any(p => p != selectedPreset && p.Name.Equals(preset.Name, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            using (var errorForm = new ErrorDialogForm(
+                                "エラー", 
+                                "同じ名前のプリセットが既に存在します。",
+                                $"プリセット名「{preset.Name}」は既に使用されています。\n別の名前を入力してください。"))
+                            {
+                                errorForm.ShowDialog();
+                            }
+                            return;
+                        }
+
                         int index = presets.IndexOf(selectedPreset);
                         presets[index] = preset;
                         SavePresets();
@@ -644,14 +674,19 @@ namespace NetworkProfileSwitcher.Forms
             var selectedAdapter = adapterListBox?.SelectedItem != null ? "選択中" : "未選択";
             var selectedPreset = presetListBox?.SelectedItem != null ? "選択中" : "未選択";
 
-            statusLabel.Text = $"アダプタ: {adapterCount}個 ({selectedAdapter}) | プリセット: {presetCount}個 ({selectedPreset})";
+            var shortcuts = "Ctrl+N:追加 | Ctrl+E:編集 | Del:削除 | F5:更新 | Enter:適用";
+            statusLabel.Text = $"アダプタ: {adapterCount}個 ({selectedAdapter}) | プリセット: {presetCount}個 ({selectedPreset}) | {shortcuts}";
         }
 
         private void UpdatePresetList()
         {
             presetListBox!.Items.Clear();
             presetListBox.HorizontalExtent = 0;  // 横スクロールをリセット
-            foreach (var preset in presets)
+            
+            // プリセットを名前順でソート
+            var sortedPresets = presets.OrderBy(p => p.Name).ToList();
+            
+            foreach (var preset in sortedPresets)
             {
                 presetListBox.Items.Add(preset);
             }
@@ -738,9 +773,20 @@ namespace NetworkProfileSwitcher.Forms
                 return;
 
             var selectedPreset = (NetworkPreset)presetListBox.SelectedItem;
+            var baseName = selectedPreset.Name;
+            var newName = $"{baseName} (コピー)";
+            
+            // 重複する場合は番号を付ける
+            int counter = 1;
+            while (presets.Any(p => p.Name.Equals(newName, StringComparison.OrdinalIgnoreCase)))
+            {
+                newName = $"{baseName} (コピー {counter})";
+                counter++;
+            }
+
             var newPreset = new NetworkPreset
             {
-                Name = $"{selectedPreset.Name} (コピー)",
+                Name = newName,
                 IP = selectedPreset.IP,
                 Subnet = selectedPreset.Subnet,
                 Gateway = selectedPreset.Gateway,
@@ -919,6 +965,55 @@ namespace NetworkProfileSwitcher.Forms
             }
 
             e.DrawFocusRectangle();
+        }
+
+        private void MainForm_KeyDown(object? sender, KeyEventArgs e)
+        {
+            // Ctrl+N: 新しいプリセット追加
+            if (e.Control && e.KeyCode == Keys.N)
+            {
+                e.Handled = true;
+                AddPresetButton_Click(sender, e);
+                return;
+            }
+
+            // Ctrl+E: プリセット編集
+            if (e.Control && e.KeyCode == Keys.E)
+            {
+                e.Handled = true;
+                if (presetListBox?.SelectedItem != null)
+                {
+                    EditPresetButton_Click(sender, e);
+                }
+                return;
+            }
+
+            // Delete: プリセット削除
+            if (e.KeyCode == Keys.Delete)
+            {
+                e.Handled = true;
+                if (presetListBox?.SelectedItem != null)
+                {
+                    DeletePresetButton_Click(sender, e);
+                }
+                return;
+            }
+
+            // F5: アダプタリスト更新
+            if (e.KeyCode == Keys.F5)
+            {
+                e.Handled = true;
+                RefreshButton_Click(sender, e);
+                return;
+            }
+
+            // Enter: 設定適用
+            if (e.KeyCode == Keys.Enter && applyButton?.Enabled == true)
+            {
+                e.Handled = true;
+                ApplyButton_Click(sender, e);
+                return;
+            }
         }
     }
 } 

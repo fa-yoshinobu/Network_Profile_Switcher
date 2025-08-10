@@ -5,7 +5,6 @@ using System.IO;
 using System.Management;
 using System.Text;
 using System.Linq;
-using System.Reflection;
 
 namespace NetworkProfileSwitcher.Models
 {
