@@ -29,6 +29,12 @@ namespace NetworkProfileSwitcher.Forms
         private ToolStripMenuItem? helpMenuItem;
         private ToolStripMenuItem? versionMenuItem;
         private ToolStripMenuItem? licenseMenuItem;
+        private GroupBox? adapterGroupBox;
+        private GroupBox? presetGroupBox;
+        private GroupBox? infoGroupBox;
+        private GroupBox? actionGroupBox;
+        private StatusStrip? statusStrip;
+        private ToolStripStatusLabel? statusLabel;
 
         public MainForm()
         {
@@ -79,16 +85,30 @@ namespace NetworkProfileSwitcher.Forms
         {
             this.SuspendLayout();
 
+            // ステータスストリップ
+            statusStrip = new StatusStrip();
+            statusLabel = new ToolStripStatusLabel("準備完了");
+            statusStrip.Items.Add(statusLabel);
+
+            // アダプタグループボックス
+            adapterGroupBox = new GroupBox
+            {
+                Text = "ネットワークアダプタ",
+                Location = new Point(12, 30),
+                Size = new Size(400, 280),
+                Font = new Font("MS Gothic", 9, FontStyle.Bold)
+            };
+
             // アダプタ一覧
             adapterListBox = new ListBox
             {
-                Location = new Point(12, 30),
-                Size = new Size(400, 200),
+                Location = new Point(10, 20),
+                Size = new Size(380, 200),
                 SelectionMode = SelectionMode.One,
                 HorizontalScrollbar = true,
                 ScrollAlwaysVisible = true,
                 DrawMode = DrawMode.OwnerDrawFixed,
-                ItemHeight = 20
+                ItemHeight = 24
             };
             adapterListBox.SelectedIndexChanged += AdapterListBox_SelectedIndexChanged;
             adapterListBox.DrawItem += AdapterListBox_DrawItem;
@@ -97,68 +117,98 @@ namespace NetworkProfileSwitcher.Forms
             refreshButton = new Button
             {
                 Text = "更新",
-                Location = new Point(12, 236),
-                Size = new Size(75, 30)
+                Location = new Point(10, 230),
+                Size = new Size(80, 35)
             };
             refreshButton.Click += RefreshButton_Click;
 
             // ネットワーク接続画面を開くボタン
             openNetworkConnectionsButton = new Button
             {
-                Text = "ネットワーク接続",
-                Location = new Point(97, 236),
-                Size = new Size(120, 30)
+                Text = "ネットワーク設定",
+                Location = new Point(100, 230),
+                Size = new Size(140, 35)
             };
             openNetworkConnectionsButton.Click += OpenNetworkConnectionsButton_Click;
+
+            // プリセットグループボックス
+            presetGroupBox = new GroupBox
+            {
+                Text = "ネットワークプリセット",
+                Location = new Point(12, 320),
+                Size = new Size(400, 280),
+                Font = new Font("MS Gothic", 9, FontStyle.Bold)
+            };
 
             // プリセット一覧
             presetListBox = new ListBox
             {
-                Location = new Point(12, 278),
-                Size = new Size(400, 200),
+                Location = new Point(10, 20),
+                Size = new Size(380, 200),
                 SelectionMode = SelectionMode.One,
                 HorizontalScrollbar = true,
                 ScrollAlwaysVisible = true,
                 DrawMode = DrawMode.OwnerDrawFixed,
-                ItemHeight = 20
+                ItemHeight = 24
             };
             presetListBox.SelectedIndexChanged += PresetListBox_SelectedIndexChanged;
             presetListBox.DrawItem += PresetListBox_DrawItem;
 
+            // 情報グループボックス
+            infoGroupBox = new GroupBox
+            {
+                Text = "アダプタ情報",
+                Location = new Point(430, 30),
+                Size = new Size(450, 280),
+                Font = new Font("MS Gothic", 9, FontStyle.Bold)
+            };
+
             // 現在のIP情報
             currentIpLabel = new TextBox
             {
-                Location = new Point(430, 30),
-                Size = new Size(450, 200),
+                Location = new Point(10, 20),
+                Size = new Size(430, 250),
                 Multiline = true,
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Vertical,
-                Font = new Font("Consolas", 9)
+                Font = new Font("MS Gothic", 9),
+                BackColor = Color.FromArgb(248, 248, 248),
+                BorderStyle = BorderStyle.FixedSingle
             };
 
-            // ボタン類
+            // アクショングループボックス
+            actionGroupBox = new GroupBox
+            {
+                Text = "操作",
+                Location = new Point(430, 320),
+                Size = new Size(450, 280),
+                Font = new Font("MS Gothic", 9, FontStyle.Bold)
+            };
+
+            // 適用ボタン
             applyButton = new Button
             {
                 Text = "適用",
-                Location = new Point(430, 278),
-                Size = new Size(100, 30),
+                Location = new Point(10, 20),
+                Size = new Size(120, 40),
                 Enabled = false
             };
             applyButton.Click += ApplyButton_Click;
 
+            // プリセット操作ボタン
             addPresetButton = new Button
             {
                 Text = "追加",
-                Location = new Point(430, 318),
-                Size = new Size(100, 30)
+                Location = new Point(10, 70),
+                Size = new Size(100, 35)
             };
             addPresetButton.Click += AddPresetButton_Click;
 
             editPresetButton = new Button
             {
                 Text = "編集",
-                Location = new Point(430, 358),
-                Size = new Size(100, 30),
+                Location = new Point(120, 70),
+                Size = new Size(100, 35),
                 Enabled = false
             };
             editPresetButton.Click += EditPresetButton_Click;
@@ -166,8 +216,8 @@ namespace NetworkProfileSwitcher.Forms
             duplicatePresetButton = new Button
             {
                 Text = "複製",
-                Location = new Point(430, 398),
-                Size = new Size(100, 30),
+                Location = new Point(230, 70),
+                Size = new Size(100, 35),
                 Enabled = false
             };
             duplicatePresetButton.Click += DuplicatePresetButton_Click;
@@ -175,8 +225,8 @@ namespace NetworkProfileSwitcher.Forms
             deletePresetButton = new Button
             {
                 Text = "削除",
-                Location = new Point(430, 438),
-                Size = new Size(100, 30),
+                Location = new Point(340, 70),
+                Size = new Size(100, 35),
                 Enabled = false
             };
             deletePresetButton.Click += DeletePresetButton_Click;
@@ -199,21 +249,42 @@ namespace NetworkProfileSwitcher.Forms
             mainMenuStrip.Items.Add(helpMenuItem);
 
             // フォーム設定
-            this.ClientSize = new Size(900, 520);
+            this.ClientSize = new Size(900, 650);
             this.Text = "Network Profile Switcher";
             this.MainMenuStrip = mainMenuStrip;
-            this.Controls.AddRange(new Control[] {
-                mainMenuStrip,
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.MinimumSize = new Size(900, 650);
+            
+            // コントロールをグループボックスに追加
+            adapterGroupBox.Controls.AddRange(new Control[] {
                 adapterListBox,
                 refreshButton,
-                openNetworkConnectionsButton,
-                presetListBox,
-                currentIpLabel,
+                openNetworkConnectionsButton
+            });
+
+            presetGroupBox.Controls.AddRange(new Control[] {
+                presetListBox
+            });
+
+            infoGroupBox.Controls.AddRange(new Control[] {
+                currentIpLabel
+            });
+
+            actionGroupBox.Controls.AddRange(new Control[] {
                 applyButton,
                 addPresetButton,
                 editPresetButton,
                 duplicatePresetButton,
                 deletePresetButton
+            });
+
+            this.Controls.AddRange(new Control[] {
+                mainMenuStrip,
+                statusStrip,
+                adapterGroupBox,
+                presetGroupBox,
+                infoGroupBox,
+                actionGroupBox
             });
 
             this.ResumeLayout(false);
@@ -545,6 +616,21 @@ namespace NetworkProfileSwitcher.Forms
             editPresetButton!.Enabled = hasSelectedPreset;
             duplicatePresetButton!.Enabled = hasSelectedPreset;
             deletePresetButton!.Enabled = hasSelectedPreset;
+
+            // ステータスバーの更新
+            UpdateStatusBar();
+        }
+
+        private void UpdateStatusBar()
+        {
+            if (statusLabel == null) return;
+
+            var adapterCount = adapterListBox?.Items.Count ?? 0;
+            var presetCount = presetListBox?.Items.Count ?? 0;
+            var selectedAdapter = adapterListBox?.SelectedItem != null ? "選択中" : "未選択";
+            var selectedPreset = presetListBox?.SelectedItem != null ? "選択中" : "未選択";
+
+            statusLabel.Text = $"アダプタ: {adapterCount}個 ({selectedAdapter}) | プリセット: {presetCount}個 ({selectedPreset})";
         }
 
         private void UpdatePresetList()
@@ -555,6 +641,7 @@ namespace NetworkProfileSwitcher.Forms
             {
                 presetListBox.Items.Add(preset);
             }
+            UpdateStatusBar();
         }
 
         private void LoadPresets()
@@ -621,6 +708,8 @@ namespace NetworkProfileSwitcher.Forms
             {
                 adapterListBox.SelectedIndex = 0;
             }
+
+            UpdateStatusBar();
         }
 
         private void RefreshButton_Click(object? sender, EventArgs e)
