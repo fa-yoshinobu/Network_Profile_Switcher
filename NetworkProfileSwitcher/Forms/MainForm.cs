@@ -6,9 +6,7 @@ using System.Text.Json;
 using System.IO;
 using System.Net.NetworkInformation;
 using System.Drawing;
-using System.Text;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Linq;
 
 namespace NetworkProfileSwitcher.Forms
@@ -32,46 +30,18 @@ namespace NetworkProfileSwitcher.Forms
         private ToolStripMenuItem? versionMenuItem;
         private ToolStripMenuItem? licenseMenuItem;
 
-        private static readonly string LogFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "NetworkProfileSwitcher",
-            "debug.log");
-
         public MainForm()
         {
             try
             {
-                LogMessage("MainFormの初期化を開始");
-
-                // 作業ディレクトリの確認
-                var currentDir = Directory.GetCurrentDirectory();
-                LogMessage($"現在の作業ディレクトリ: {currentDir}");
-
-                // プリセットファイルのパスを確認
-                var presetsFullPath = Path.GetFullPath(PresetsFilePath);
-                LogMessage($"プリセットファイルのパス: {presetsFullPath}");
-
-                // プリセットファイルの存在確認
-                if (File.Exists(PresetsFilePath))
-                {
-                    LogMessage("プリセットファイルが存在します");
-                }
-                else
-                {
-                    LogMessage("プリセットファイルが存在しません");
-                }
-
                 InitializeComponent();
-                LogMessage("コンポーネントの初期化完了");
 
                 try
                 {
                     LoadPresets();
-                    LogMessage("プリセットの読み込み完了");
                 }
                 catch (Exception ex)
                 {
-                    LogMessage($"プリセットの読み込みに失敗: {ex.Message}\n{ex.StackTrace}");
                     MessageBox.Show(
                         $"プリセットの読み込みに失敗しました。\n\nエラー: {ex.Message}",
                         "エラー",
@@ -82,11 +52,9 @@ namespace NetworkProfileSwitcher.Forms
                 try
                 {
                     InitializeNetworkAdapters();
-                    LogMessage("ネットワークアダプタの初期化完了");
                 }
                 catch (Exception ex)
                 {
-                    LogMessage($"ネットワークアダプタの初期化に失敗: {ex.Message}\n{ex.StackTrace}");
                     MessageBox.Show(
                         $"ネットワークアダプタの初期化に失敗しました。\n\nエラー: {ex.Message}",
                         "エラー",
@@ -96,9 +64,8 @@ namespace NetworkProfileSwitcher.Forms
             }
             catch (Exception ex)
             {
-                LogMessage($"MainFormの初期化に失敗: {ex.Message}\n{ex.StackTrace}");
                 MessageBox.Show(
-                    $"アプリケーションの初期化に失敗しました。\n\nエラー: {ex.Message}\n\nスタックトレース:\n{ex.StackTrace}",
+                    $"アプリケーションの初期化に失敗しました。\n\nエラー: {ex.Message}",
                     "エラー",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -106,18 +73,7 @@ namespace NetworkProfileSwitcher.Forms
             }
         }
 
-        private void LogMessage(string message)
-        {
-            try
-            {
-                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                File.AppendAllText(LogFilePath, $"[{timestamp}] {message}{Environment.NewLine}");
-            }
-            catch
-            {
-                // ログの書き込みに失敗しても無視
-            }
-        }
+
 
         private void InitializeComponent()
         {
@@ -355,6 +311,29 @@ namespace NetworkProfileSwitcher.Forms
             }
         }
 
+        private bool ValidatePreset(NetworkPreset preset)
+        {
+            if (string.IsNullOrWhiteSpace(preset.Name))
+            {
+                using (var errorForm = new ErrorDialogForm("エラー", "プリセット名が空です。"))
+                {
+                    errorForm.ShowDialog();
+                }
+                return false;
+            }
+
+            if (preset.IP != "dhcp" && string.IsNullOrWhiteSpace(preset.IP))
+            {
+                using (var errorForm = new ErrorDialogForm("エラー", "IPアドレスが空です。"))
+                {
+                    errorForm.ShowDialog();
+                }
+                return false;
+            }
+
+            return true;
+        }
+
         private void AddPresetButton_Click(object? sender, EventArgs e)
         {
             using (var form = new PresetEditorForm())
@@ -363,28 +342,12 @@ namespace NetworkProfileSwitcher.Forms
                 {
                     var preset = form.GetPreset();
                     
-                    // プリセットのバリデーション
-                    if (string.IsNullOrWhiteSpace(preset.Name))
+                    if (ValidatePreset(preset))
                     {
-                        using (var errorForm = new ErrorDialogForm("エラー", "プリセット名が空です。"))
-                        {
-                            errorForm.ShowDialog();
-                        }
-                        return;
+                        presets.Add(preset);
+                        SavePresets();
+                        UpdatePresetList();
                     }
-
-                    if (preset.IP != "dhcp" && string.IsNullOrWhiteSpace(preset.IP))
-                    {
-                        using (var errorForm = new ErrorDialogForm("エラー", "IPアドレスが空です。"))
-                        {
-                            errorForm.ShowDialog();
-                        }
-                        return;
-                    }
-
-                    presets.Add(preset);
-                    SavePresets();
-                    UpdatePresetList();
                 }
             }
         }
@@ -401,29 +364,13 @@ namespace NetworkProfileSwitcher.Forms
                 {
                     var preset = form.GetPreset();
                     
-                    // プリセットのバリデーション
-                    if (string.IsNullOrWhiteSpace(preset.Name))
+                    if (ValidatePreset(preset))
                     {
-                        using (var errorForm = new ErrorDialogForm("エラー", "プリセット名が空です。"))
-                        {
-                            errorForm.ShowDialog();
-                        }
-                        return;
+                        int index = presets.IndexOf(selectedPreset);
+                        presets[index] = preset;
+                        SavePresets();
+                        UpdatePresetList();
                     }
-
-                    if (preset.IP != "dhcp" && string.IsNullOrWhiteSpace(preset.IP))
-                    {
-                        using (var errorForm = new ErrorDialogForm("エラー", "IPアドレスが空です。"))
-                        {
-                            errorForm.ShowDialog();
-                        }
-                        return;
-                    }
-
-                    int index = presets.IndexOf(selectedPreset);
-                    presets[index] = preset;
-                    SavePresets();
-                    UpdatePresetList();
                 }
             }
         }
@@ -457,7 +404,6 @@ namespace NetworkProfileSwitcher.Forms
 
             var adapter = (NetworkInterface)adapterListBox.SelectedItem;
             var properties = adapter.GetIPProperties();
-            var ipv4Properties = properties.GetIPv4Properties();
 
             var info = new System.Text.StringBuilder();
 
@@ -479,10 +425,7 @@ namespace NetworkProfileSwitcher.Forms
             {
                 // DHCPの設定状態を確認
                 var dhcpServerAddresses = properties.DhcpServerAddresses;
-                if (dhcpServerAddresses.Count > 0)
-                {
-                    isDhcp = true;
-                }
+                isDhcp = dhcpServerAddresses.Count > 0;
             }
             catch
             {
@@ -682,38 +625,7 @@ namespace NetworkProfileSwitcher.Forms
 
         private void RefreshButton_Click(object? sender, EventArgs e)
         {
-            // 現在選択されているアダプタのIDを保存
-            string? selectedAdapterId = null;
-            if (adapterListBox?.SelectedItem != null)
-            {
-                selectedAdapterId = ((NetworkInterface)adapterListBox.SelectedItem).Id;
-            }
-
             InitializeNetworkAdapters();
-
-            // 以前選択されていたアダプタを再度選択
-            if (!string.IsNullOrEmpty(selectedAdapterId))
-            {
-                var index = adapterListBox!.Items.OfType<NetworkInterface>()
-                    .ToList()
-                    .FindIndex(a => a.Id == selectedAdapterId);
-                
-                if (index >= 0)
-                {
-                    adapterListBox.SelectedIndex = index;
-                }
-                else if (adapterListBox.Items.Count > 0)
-                {
-                    // 以前のアダプタが見つからない場合は最初のアダプタを選択
-                    adapterListBox.SelectedIndex = 0;
-                }
-            }
-            else if (adapterListBox!.Items.Count > 0)
-            {
-                // 以前選択されていなかった場合は最初のアダプタを選択
-                adapterListBox.SelectedIndex = 0;
-            }
-
             UpdateCurrentIpInfo();
         }
 
