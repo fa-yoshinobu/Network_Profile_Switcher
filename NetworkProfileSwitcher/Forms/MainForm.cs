@@ -27,6 +27,10 @@ namespace NetworkProfileSwitcher.Forms
         private TextBox? currentIpLabel;
         private Button? refreshButton;
         private Button? openNetworkConnectionsButton;
+        private MenuStrip? mainMenuStrip;
+        private ToolStripMenuItem? helpMenuItem;
+        private ToolStripMenuItem? versionMenuItem;
+        private ToolStripMenuItem? licenseMenuItem;
 
         private static readonly string LogFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -122,7 +126,7 @@ namespace NetworkProfileSwitcher.Forms
             // アダプタ一覧
             adapterListBox = new ListBox
             {
-                Location = new Point(12, 12),
+                Location = new Point(12, 30),
                 Size = new Size(400, 200),
                 SelectionMode = SelectionMode.One,
                 HorizontalScrollbar = true,
@@ -137,7 +141,7 @@ namespace NetworkProfileSwitcher.Forms
             refreshButton = new Button
             {
                 Text = "更新",
-                Location = new Point(12, 218),
+                Location = new Point(12, 236),
                 Size = new Size(75, 30)
             };
             refreshButton.Click += RefreshButton_Click;
@@ -146,7 +150,7 @@ namespace NetworkProfileSwitcher.Forms
             openNetworkConnectionsButton = new Button
             {
                 Text = "ネットワーク接続",
-                Location = new Point(97, 218),
+                Location = new Point(97, 236),
                 Size = new Size(120, 30)
             };
             openNetworkConnectionsButton.Click += OpenNetworkConnectionsButton_Click;
@@ -154,7 +158,7 @@ namespace NetworkProfileSwitcher.Forms
             // プリセット一覧
             presetListBox = new ListBox
             {
-                Location = new Point(12, 260),
+                Location = new Point(12, 278),
                 Size = new Size(400, 200),
                 SelectionMode = SelectionMode.One,
                 HorizontalScrollbar = true,
@@ -168,7 +172,7 @@ namespace NetworkProfileSwitcher.Forms
             // 現在のIP情報
             currentIpLabel = new TextBox
             {
-                Location = new Point(430, 12),
+                Location = new Point(430, 30),
                 Size = new Size(450, 200),
                 Multiline = true,
                 ReadOnly = true,
@@ -180,7 +184,7 @@ namespace NetworkProfileSwitcher.Forms
             applyButton = new Button
             {
                 Text = "適用",
-                Location = new Point(430, 260),
+                Location = new Point(430, 278),
                 Size = new Size(100, 30),
                 Enabled = false
             };
@@ -189,7 +193,7 @@ namespace NetworkProfileSwitcher.Forms
             addPresetButton = new Button
             {
                 Text = "追加",
-                Location = new Point(430, 300),
+                Location = new Point(430, 318),
                 Size = new Size(100, 30)
             };
             addPresetButton.Click += AddPresetButton_Click;
@@ -197,7 +201,7 @@ namespace NetworkProfileSwitcher.Forms
             editPresetButton = new Button
             {
                 Text = "編集",
-                Location = new Point(430, 340),
+                Location = new Point(430, 358),
                 Size = new Size(100, 30),
                 Enabled = false
             };
@@ -206,7 +210,7 @@ namespace NetworkProfileSwitcher.Forms
             duplicatePresetButton = new Button
             {
                 Text = "複製",
-                Location = new Point(430, 380),
+                Location = new Point(430, 398),
                 Size = new Size(100, 30),
                 Enabled = false
             };
@@ -215,16 +219,35 @@ namespace NetworkProfileSwitcher.Forms
             deletePresetButton = new Button
             {
                 Text = "削除",
-                Location = new Point(430, 420),
+                Location = new Point(430, 438),
                 Size = new Size(100, 30),
                 Enabled = false
             };
             deletePresetButton.Click += DeletePresetButton_Click;
 
+            // メニューの作成
+            mainMenuStrip = new MenuStrip();
+            helpMenuItem = new ToolStripMenuItem("ヘルプ(&H)");
+            
+            versionMenuItem = new ToolStripMenuItem("バージョン情報(&V)");
+            versionMenuItem.Click += VersionMenuItem_Click;
+            
+            licenseMenuItem = new ToolStripMenuItem("ライセンス情報(&L)");
+            licenseMenuItem.Click += LicenseMenuItem_Click;
+            
+            helpMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                versionMenuItem,
+                licenseMenuItem
+            });
+            
+            mainMenuStrip.Items.Add(helpMenuItem);
+
             // フォーム設定
-            this.ClientSize = new Size(900, 500);
+            this.ClientSize = new Size(900, 520);
             this.Text = "Network Profile Switcher";
+            this.MainMenuStrip = mainMenuStrip;
             this.Controls.AddRange(new Control[] {
+                mainMenuStrip,
                 adapterListBox,
                 refreshButton,
                 openNetworkConnectionsButton,
@@ -738,6 +761,18 @@ namespace NetworkProfileSwitcher.Forms
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
+        }
+
+        private void VersionMenuItem_Click(object? sender, EventArgs e)
+        {
+            var versionForm = new VersionInfoForm();
+            versionForm.ShowDialog(this);
+        }
+
+        private void LicenseMenuItem_Click(object? sender, EventArgs e)
+        {
+            var licenseForm = new LicenseInfoForm();
+            licenseForm.ShowDialog(this);
         }
 
         private void AdapterListBox_DrawItem(object? sender, DrawItemEventArgs e)
