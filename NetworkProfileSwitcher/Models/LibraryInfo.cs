@@ -82,7 +82,7 @@ namespace NetworkProfileSwitcher.Models
         public static string GetApplicationVersion()
         {
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            return version?.ToString() ?? "1.0.0.0";
+            return version?.ToString() ?? "1.0.2.0";
         }
 
         /// <summary>

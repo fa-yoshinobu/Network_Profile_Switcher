@@ -118,7 +118,9 @@ namespace NetworkProfileSwitcher.Forms
             {
                 Text = "更新",
                 Location = new Point(10, 230),
-                Size = new Size(80, 35)
+                Size = new Size(100, 35),
+                Font = new Font("MS Gothic", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat
             };
             refreshButton.Click += RefreshButton_Click;
 
@@ -126,8 +128,10 @@ namespace NetworkProfileSwitcher.Forms
             openNetworkConnectionsButton = new Button
             {
                 Text = "ネットワーク設定",
-                Location = new Point(100, 230),
-                Size = new Size(140, 35)
+                Location = new Point(120, 230),
+                Size = new Size(160, 35),
+                Font = new Font("MS Gothic", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat
             };
             openNetworkConnectionsButton.Click += OpenNetworkConnectionsButton_Click;
 
@@ -143,8 +147,8 @@ namespace NetworkProfileSwitcher.Forms
             // プリセット一覧
             presetListBox = new ListBox
             {
-                Location = new Point(10, 20),
-                Size = new Size(380, 200),
+                Location = new Point(5, 15),
+                Size = new Size(390, 260),
                 SelectionMode = SelectionMode.One,
                 HorizontalScrollbar = true,
                 ScrollAlwaysVisible = true,
@@ -191,6 +195,8 @@ namespace NetworkProfileSwitcher.Forms
                 Text = "適用",
                 Location = new Point(10, 20),
                 Size = new Size(120, 40),
+                Font = new Font("MS Gothic", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
                 Enabled = false
             };
             applyButton.Click += ApplyButton_Click;
@@ -199,16 +205,20 @@ namespace NetworkProfileSwitcher.Forms
             addPresetButton = new Button
             {
                 Text = "追加",
-                Location = new Point(10, 70),
-                Size = new Size(100, 35)
+                Location = new Point(10, 80),
+                Size = new Size(120, 35),
+                Font = new Font("MS Gothic", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat
             };
             addPresetButton.Click += AddPresetButton_Click;
 
             editPresetButton = new Button
             {
                 Text = "編集",
-                Location = new Point(120, 70),
-                Size = new Size(100, 35),
+                Location = new Point(10, 125),
+                Size = new Size(120, 35),
+                Font = new Font("MS Gothic", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
                 Enabled = false
             };
             editPresetButton.Click += EditPresetButton_Click;
@@ -216,8 +226,10 @@ namespace NetworkProfileSwitcher.Forms
             duplicatePresetButton = new Button
             {
                 Text = "複製",
-                Location = new Point(230, 70),
-                Size = new Size(100, 35),
+                Location = new Point(10, 170),
+                Size = new Size(120, 35),
+                Font = new Font("MS Gothic", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
                 Enabled = false
             };
             duplicatePresetButton.Click += DuplicatePresetButton_Click;
@@ -225,8 +237,10 @@ namespace NetworkProfileSwitcher.Forms
             deletePresetButton = new Button
             {
                 Text = "削除",
-                Location = new Point(340, 70),
-                Size = new Size(100, 35),
+                Location = new Point(10, 215),
+                Size = new Size(120, 35),
+                Font = new Font("MS Gothic", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
                 Enabled = false
             };
             deletePresetButton.Click += DeletePresetButton_Click;

@@ -11,45 +11,22 @@ namespace NetworkProfileSwitcher.Models
 {
     public static class NetworkManager
     {
-        private static readonly string LogFilePath = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? Environment.CurrentDirectory,
-            "debug.log");
-
-        private static void LogMessage(string message)
-        {
-            try
-            {
-                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                var logEntry = $"[{timestamp}] [NetworkManager] {message}{Environment.NewLine}";
-                File.AppendAllText(LogFilePath, logEntry, Encoding.UTF8);
-            }
-            catch
-            {
-                // ログの書き込みに失敗しても無視
-            }
-        }
 
         public static void ApplyPreset(NetworkInterface adapter, NetworkPreset preset)
         {
-            LogMessage($"プリセット適用開始: アダプタ={adapter.Name}, プリセット={preset.Name}, IP={preset.IP}");
-            
             // 管理者権限の確認
             if (!IsAdministrator())
             {
                 var errorMsg = "ネットワーク設定の適用には管理者権限が必要です。\nアプリケーションを管理者として実行してください。";
-                LogMessage($"エラー: {errorMsg}");
                 throw new Exception(errorMsg);
             }
 
             // アダプタの状態確認と処理
             if (adapter.OperationalStatus != OperationalStatus.Up)
             {
-                LogMessage($"アダプタ状態確認: {adapter.Name} = {adapter.OperationalStatus}");
-                
                 // アダプタがDown状態の場合、有効化を試行
                 if (adapter.OperationalStatus == OperationalStatus.Down)
                 {
-                    LogMessage($"アダプタ有効化を試行: {adapter.Name}");
                     try
                     {
                         EnableAdapter(adapter);
@@ -61,108 +38,87 @@ namespace NetworkProfileSwitcher.Models
                         if (refreshedAdapter != null && refreshedAdapter.OperationalStatus == OperationalStatus.Up)
                         {
                             adapter = refreshedAdapter;
-                            LogMessage($"アダプタ有効化成功: {adapter.Name}");
                         }
                         else
                         {
                             var errorMsg = $"アダプタ '{adapter.Name}' の有効化に失敗しました。\n現在の状態: {adapter.OperationalStatus}\n\n考えられる原因:\n- LANケーブルが接続されていない\n- ネットワークアダプタのドライバーに問題がある\n- 物理的な接続に問題がある\n\n対処方法:\n1. LANケーブルが正しく接続されているか確認\n2. ネットワークアダプタのドライバーを更新\n3. デバイスマネージャーでアダプタの状態を確認";
-                            LogMessage($"エラー: {errorMsg}");
                             throw new Exception(errorMsg);
                         }
                     }
                     catch (Exception enableException)
                     {
                         var errorMsg = $"アダプタ '{adapter.Name}' の有効化に失敗しました。\n現在の状態: {adapter.OperationalStatus}\n\n有効化エラー: {enableException.Message}\n\n考えられる原因:\n- LANケーブルが接続されていない\n- ネットワークアダプタのドライバーに問題がある\n- 物理的な接続に問題がある\n\n対処方法:\n1. LANケーブルが正しく接続されているか確認\n2. ネットワークアダプタのドライバーを更新\n3. デバイスマネージャーでアダプタの状態を確認";
-                        LogMessage($"エラー: {errorMsg}");
                         throw new Exception(errorMsg);
                     }
                 }
                 else
                 {
                     var errorMsg = $"アダプタ '{adapter.Name}' が有効になっていません。\n現在の状態: {adapter.OperationalStatus}\nアダプタを有効にしてから再試行してください。";
-                    LogMessage($"エラー: {errorMsg}");
                     throw new Exception(errorMsg);
                 }
             }
 
             if (preset.IP.ToLower() == "dhcp")
             {
-                LogMessage($"DHCP設定を適用: {adapter.Name}");
                 // DHCP設定の適用（netshを試行、失敗した場合はWMIを使用）
                 try
                 {
                     ApplyDhcpWithNetsh(adapter);
-                    LogMessage($"DHCP設定成功 (netsh): {adapter.Name}");
                 }
                 catch (Exception netshException)
                 {
-                    LogMessage($"netsh DHCP設定失敗: {adapter.Name}, エラー: {netshException.Message}");
                     // netshが失敗した場合、WMIを使用してDHCP設定を適用
                     try
                     {
                         ApplyDhcpWithWmi(adapter);
-                        LogMessage($"DHCP設定成功 (WMI): {adapter.Name}");
                     }
                     catch (Exception wmiException)
                     {
                         // DHCPが既に有効な場合は成功として扱う
                         if (netshException.Message.Contains("DHCP is already enabled"))
                         {
-                            LogMessage($"DHCP既に有効: {adapter.Name}");
                             return; // 成功として扱う
                         }
                         
                         var errorMsg = $"DHCP設定の適用に失敗しました。\nアダプタ: {adapter.Name}\nアダプタ状態: {adapter.OperationalStatus}\nアダプタ種類: {adapter.NetworkInterfaceType}\n\nnetshエラー:\n{netshException.Message}\n\nWMIエラー:\n{wmiException.Message}";
-                        LogMessage($"エラー: {errorMsg}");
                         throw new Exception(errorMsg);
                     }
                 }
             }
             else
             {
-                LogMessage($"静的IP設定を適用: {adapter.Name}, IP={preset.IP}, Subnet={preset.Subnet}, Gateway={preset.Gateway}");
                 // 静的IP設定の適用
                 var result = RunNetshCommand($"interface ip set address \"{adapter.Name}\" static {preset.IP} {preset.Subnet} {preset.Gateway}");
                 if (result != 0)
                 {
                     var detailedError = GetDetailedNetshError($"interface ip set address \"{adapter.Name}\" static {preset.IP} {preset.Subnet} {preset.Gateway}");
                     var errorMsg = $"IPアドレスの設定に失敗しました。\nアダプタ: {adapter.Name}\nアダプタ状態: {adapter.OperationalStatus}\nアダプタ種類: {adapter.NetworkInterfaceType}\n\nエラー詳細:\n{detailedError}";
-                    LogMessage($"エラー: {errorMsg}");
                     throw new Exception(errorMsg);
                 }
-                LogMessage($"IPアドレス設定成功: {adapter.Name}, IP={preset.IP}");
 
                 // DNS設定
                 if (!string.IsNullOrEmpty(preset.DNS1))
                 {
-                    LogMessage($"DNS1設定を適用: {adapter.Name}, DNS1={preset.DNS1}");
                     result = RunNetshCommand($"interface ip set dns \"{adapter.Name}\" static {preset.DNS1}");
                     if (result != 0)
                     {
                         var detailedError = GetDetailedNetshError($"interface ip set dns \"{adapter.Name}\" static {preset.DNS1}");
                         var errorMsg = $"DNSサーバー1の設定に失敗しました。\nアダプタ: {adapter.Name}\nアダプタ状態: {adapter.OperationalStatus}\nアダプタ種類: {adapter.NetworkInterfaceType}\n\nエラー詳細:\n{detailedError}";
-                        LogMessage($"エラー: {errorMsg}");
                         throw new Exception(errorMsg);
                     }
-                    LogMessage($"DNS1設定成功: {adapter.Name}, DNS1={preset.DNS1}");
                 }
 
                 if (!string.IsNullOrEmpty(preset.DNS2))
                 {
-                    LogMessage($"DNS2設定を適用: {adapter.Name}, DNS2={preset.DNS2}");
                     result = RunNetshCommand($"interface ip add dns \"{adapter.Name}\" {preset.DNS2} index=2");
                     if (result != 0)
                     {
                         var detailedError = GetDetailedNetshError($"interface ip add dns \"{adapter.Name}\" {preset.DNS2} index=2");
                         var errorMsg = $"DNSサーバー2の設定に失敗しました。\nアダプタ: {adapter.Name}\nアダプタ状態: {adapter.OperationalStatus}\nアダプタ種類: {adapter.NetworkInterfaceType}\n\nエラー詳細:\n{detailedError}";
-                        LogMessage($"エラー: {errorMsg}");
                         throw new Exception(errorMsg);
                     }
-                    LogMessage($"DNS2設定成功: {adapter.Name}, DNS2={preset.DNS2}");
                 }
             }
-            
-            LogMessage($"プリセット適用完了: {adapter.Name}, プリセット={preset.Name}");
         }
 
         private static void EnableAdapter(NetworkInterface adapter)

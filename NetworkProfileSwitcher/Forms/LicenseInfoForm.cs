@@ -141,17 +141,25 @@ namespace NetworkProfileSwitcher.Forms
         {
             if (libraryListView?.SelectedItems.Count == 0) return;
 
-            var selectedItem = libraryListView.SelectedItems[0];
-            var library = selectedItem.Tag as LibraryInfo;
+            var listView = libraryListView;
+            if (listView == null) return;
 
-            if (library is not null)
+            var selectedItems = listView.SelectedItems;
+            if (selectedItems.Count > 0)
             {
-                DisplayLicenseInfo(library);
+                var firstItem = selectedItems[0];
+                if (firstItem?.Tag is LibraryInfo library)
+                {
+                    DisplayLicenseInfo(library);
+                }
             }
         }
 
         private void DisplayLicenseInfo(LibraryInfo library)
         {
+            var licenseTextBox = this.licenseTextBox;
+            var openUrlButton = this.openUrlButton;
+            
             if (licenseTextBox == null || openUrlButton == null) return;
 
             var licenseText = GetLicenseText(library);
